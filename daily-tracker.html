@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Analysis Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .data-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .delete-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: #c53030;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .work { color: #38a169; }
+        .waste { color: #e53e3e; }
+        .necessary { color: #3182ce; }
+
+        @media (max-width: 768px) {
+            .dashboard-grid, .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .no-data {
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Daily Analysis Dashboard</h1>
+            <p>Track your time and visualize your productivity patterns</p>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value work" id="workHours">0h</div>
+                <div class="stat-label">Work (Avg/Day)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value waste" id="wasteHours">0h</div>
+                <div class="stat-label">Waste (Avg/Day)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value necessary" id="necessaryHours">0h</div>
+                <div class="stat-label">Necessary (Avg/Day)</div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>📝 Add Daily Entry</h2>
+                <form id="entryForm">
+                    <div class="input-group">
+                        <label for="date">Date</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="category">Category</label>
+                        <select id="category" required>
+                            <option value="">Select category</option>
+                            <option value="Work">Work</option>
+                            <option value="Waste">Waste</option>
+                            <option value="Necessary">Necessary</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="hours">Hours</label>
+                        <input type="number" id="hours" min="0" max="24" step="0.5" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="description">Description (Optional)</label>
+                        <input type="text" id="description" placeholder="What did you do?">
+                    </div>
+                    <button type="submit" class="btn">Add Entry</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📋 Recent Entries</h2>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="data-table" id="entriesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Hours</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="entriesBody">
+                            <tr>
+                                <td colspan="5" class="no-data">No entries yet. Add your first entry!</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="card">
+                <h2>🥧 Time Distribution (Last 30 Days)</h2>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📈 Daily Trends (Last 30 Days)</h2>
+                <div class="chart-container">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let entries = JSON.parse(localStorage.getItem('dailyEntries') || '[]');
+        
+        // Chart instances
+        let pieChart, lineChart;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default
+            document.getElementById('date').valueAsDate = new Date();
+            
+            updateDisplay();
+            initializeCharts();
+        });
+
+        // Form submission
+        document.getElementById('entryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('date').value;
+            const category = document.getElementById('category').value;
+            const hours = parseFloat(document.getElementById('hours').value);
+            const description = document.getElementById('description').value;
+
+            // Check if entry for this date and category already exists
+            const existingIndex = entries.findIndex(entry => 
+                entry.date === date && entry.category === category
+            );
+
+            if (existingIndex !== -1) {
+                // Update existing entry
+                entries[existingIndex].hours += hours;
+                if (description) {
+                    entries[existingIndex].description += (entries[existingIndex].description ? '; ' : '') + description;
+                }
+            } else {
+                // Add new entry
+                entries.push({
+                    id: Date.now(),
+                    date,
+                    category,
+                    hours,
+                    description: description || ''
+                });
+            }
+
+            // Sort entries by date (newest first)
+            entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            saveData();
+            updateDisplay();
+            updateCharts();
+
+            // Reset form
+            document.getElementById('hours').value = '';
+            document.getElementById('description').value = '';
+        });
+
+        function saveData() {
+            localStorage.setItem('dailyEntries', JSON.stringify(entries));
+        }
+
+        function deleteEntry(id) {
+            entries = entries.filter(entry => entry.id !== id);
+            saveData();
+            updateDisplay();
+            updateCharts();
+        }
+
+        function updateDisplay() {
+            updateTable();
+            updateStats();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('entriesBody');
+            
+            if (entries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No entries yet. Add your first entry!</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = entries.slice(0, 10).map(entry => `
+                <tr>
+                    <td>${new Date(entry.date).toLocaleDateString()}</td>
+                    <td><span class="${entry.category.toLowerCase()}">${entry.category}</span></td>
+                    <td>${entry.hours}h</td>
+                    <td>${entry.description || '-'}</td>
+                    <td><button class="delete-btn" onclick="deleteEntry(${entry.id})">Delete</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats() {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            const recentEntries = entries.filter(entry => 
+                new Date(entry.date) >= thirtyDaysAgo
+            );
+
+            const stats = {
+                Work: 0,
+                Waste: 0,
+                Necessary: 0
+            };
+
+            const daysWithEntries = new Set();
+            
+            recentEntries.forEach(entry => {
+                stats[entry.category] += entry.hours;
+                daysWithEntries.add(entry.date);
+            });
+
+            const dayCount = Math.max(daysWithEntries.size, 1);
+
+            document.getElementById('workHours').textContent = `${(stats.Work / dayCount).toFixed(1)}h`;
+            document.getElementById('wasteHours').textContent = `${(stats.Waste / dayCount).toFixed(1)}h`;
+            document.getElementById('necessaryHours').textContent = `${(stats.Necessary / dayCount).toFixed(1)}h`;
+        }
+
+        function initializeCharts() {
+            // Pie Chart
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Work', 'Waste', 'Necessary'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: ['#38a169', '#e53e3e', '#3182ce'],
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Line Chart
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            lineChart = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Work',
+                            data: [],
+                            borderColor: '#38a169',
+                            backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Waste',
+                            data: [],
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Necessary',
+                            data: [],
+                            borderColor: '#3182ce',
+                            backgroundColor: 'rgba(49, 130, 206, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Hours'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }
+                    }
+                }
+            });
+
+            updateCharts();
+        }
+
+        function updateCharts() {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            const recentEntries = entries.filter(entry => 
+                new Date(entry.date) >= thirtyDaysAgo
+            );
+
+            // Update pie chart
+            const pieStats = { Work: 0, Waste: 0, Necessary: 0 };
+            recentEntries.forEach(entry => {
+                pieStats[entry.category] += entry.hours;
+            });
+
+            pieChart.data.datasets[0].data = [pieStats.Work, pieStats.Waste, pieStats.Necessary];
+            pieChart.update();
+
+            // Update line chart
+            const dailyStats = {};
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                dailyStats[dateStr] = { Work: 0, Waste: 0, Necessary: 0 };
+            }
+
+            recentEntries.forEach(entry => {
+                if (dailyStats[entry.date]) {
+                    dailyStats[entry.date][entry.category] += entry.hours;
+                }
+            });
+
+            const dates = Object.keys(dailyStats).sort();
+            const workData = dates.map(date => dailyStats[date].Work);
+            const wasteData = dates.map(date => dailyStats[date].Waste);
+            const necessaryData = dates.map(date => dailyStats[date].Necessary);
+
+            lineChart.data.labels = dates.map(date => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            lineChart.data.datasets[0].data = workData;
+            lineChart.data.datasets[1].data = wasteData;
+            lineChart.data.datasets[2].data = necessaryData;
+            lineChart.update();
+        }
+    </script>
+</body>
+</html>
